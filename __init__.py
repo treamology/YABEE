@@ -4,7 +4,7 @@
 bl_info = {
     "name": "Panda3d EGG format",
     "author": "Andrey (Ninth) Arbuzov",
-    "blender": (2, 6, 0),
+    "blender": (2, 80, 0),
     "api": 41226,
     "location": "File > Import-Export",
     "description": ("Export to Panda3D EGG: meshes, uvs, materials, textures, "
@@ -31,7 +31,7 @@ class EGGBakeProperty(bpy.types.PropertyGroup):
         row.prop(self, "res_x")
         row.prop(self, "res_y")
         row.prop(self, "export")
-        row.label(name)
+        row.label(text=name)
 
 class EGGAnimationProperty(bpy.types.PropertyGroup):
     ''' One animation record '''
@@ -168,7 +168,7 @@ class YABEEProperty(bpy.types.PropertyGroup):
         row.operator("export.yabee_reset_defaults", icon="FILE_REFRESH", text="Reset to defaults")
         row.operator("export.yabee_help", icon="URL", text="Help")
 
-        layout.row().label('Animation:')
+        layout.row().label(text = 'Animation:')
         layout.row().prop(self, 'opt_anims_from_actions')
         if not self.opt_anims_from_actions:
             row = layout.row()
@@ -179,8 +179,8 @@ class YABEEProperty(bpy.types.PropertyGroup):
                               "active_index",
                               rows=2)
             col = row.column(align=True)
-            col.operator("export.egg_anim_add", icon='ZOOMIN', text="")
-            col.operator("export.egg_anim_remove", icon='ZOOMOUT', text="")
+            col.operator("export.egg_anim_add", icon='ADD', text="")
+            col.operator("export.egg_anim_remove", icon='REMOVE', text="")
             sett = self.opt_anim_list
             if len(sett.anim_collection):
                 p = sett.anim_collection[sett.active_index]
@@ -192,7 +192,7 @@ class YABEEProperty(bpy.types.PropertyGroup):
 
         layout.separator()
 
-        layout.row().label('Options:')
+        layout.row().label(text = 'Options:')
         layout.row().prop(self, 'opt_anim_only')
         layout.row().prop(self, 'opt_separate_anim_files')
         if not self.opt_anim_only:
@@ -320,9 +320,9 @@ class WarnDialog(bpy.types.Operator):
         for warn in warns:
             for n, line in enumerate(warn.splitlines()):
                 if n == 0:
-                    self.layout.row().label(line, icon="ERROR")
+                    self.layout.row().label(text=line, icon="ERROR")
                 else:
-                    self.layout.row().label('    ' + line, icon="NONE")
+                    self.layout.row().label(text='    ' + line, icon="NONE")
 
     def execute(self, context):
         #print("Dialog Runs")
@@ -438,9 +438,23 @@ class ExportPanda3DEGG(bpy.types.Operator, ExportHelper):
 def menu_func_export(self, context):
     self.layout.operator(ExportPanda3DEGG.bl_idname, text="Panda3D (.egg)")
 
+classes = (
+    EGGBakeProperty,
+    EGGAnimationProperty,
+    EGGAnimList,
+    YABEEProperty,
+    YABEEHelp,
+    WarnDialog,
+    ResetDefault,
+    AddAnim,
+    RemoveAnim,
+    ExportPanda3DEGG,
+)
 
 def register():
-    bpy.utils.register_module(__name__)
+    from bpy.utils import register_class
+    for cls in classes:
+        register_class(cls)
 
     # Good or bad, but I'll store settings in the scene
     bpy.types.Scene.yabee_settings = PointerProperty(type=YABEEProperty)
@@ -462,14 +476,17 @@ def register():
     bpy.types.Bone.yabee_name = StringProperty(name="YABEE_Name", default="Unknown")
     bpy.types.PoseBone.yabee_name = StringProperty(name="YABEE_Name", default="Unknown")
 
-    bpy.types.INFO_MT_file_export.append(menu_func_export)
+    bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
     # Add link for export function to use in another addon
     __builtins__['p3d_egg_export'] = egg_writer.write_out
 
 
 def unregister():
-    bpy.utils.unregister_module(__name__)
-    bpy.types.INFO_MT_file_export.remove(menu_func_export)
+    from bpy.utils import unregister_class
+    for cls in classes:
+        unregister_class(cls)
+
+    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
     del(__builtins__['p3d_egg_export'])
 
 

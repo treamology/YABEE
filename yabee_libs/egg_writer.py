@@ -164,6 +164,8 @@ class Group:
 
         @return: the EGG tags string.
         """
+        # FIXME: Fix get_tags_egg_str()
+        return ""
         egg_str = ''
         if self.object:
             for prop in self.object.game.properties:
@@ -434,7 +436,7 @@ class EGGMeshObjectData(EGGBaseObjectData):
                 continue
             if not obj.data.materials[f.material_index]:
                 continue
-            for slot in obj.data.materials[f.material_index].texture_slots:
+            for slot in obj.data.materials[f.material_index].texture_paint_slots:
                 if slot and slot.texture_coords == 'ORCO':
                     need_orco = True
                     break
@@ -443,7 +445,7 @@ class EGGMeshObjectData(EGGBaseObjectData):
 
         # Store current active UV name
         self.active_uv = None
-        auv = [uv for uv in obj.data.uv_textures if uv.active]
+        auv = [uv for uv in obj.data.uv_layers if uv.active]
         if auv:
             self.active_uv = auv[0].name
 
@@ -572,7 +574,7 @@ class EGGMeshObjectData(EGGBaseObjectData):
 
         @return: list of vertex attributes.
         """
-        co = self.obj_ref.matrix_world * self.obj_ref.data.vertices[vidx].co
+        co = self.obj_ref.matrix_world @ self.obj_ref.data.vertices[vidx].co
         attributes.append('%f %f %f' % co[:])
         return attributes
 
@@ -699,7 +701,9 @@ class EGGMeshObjectData(EGGBaseObjectData):
 
         @return: list of polygon's attributes.
         """
+        # FIXME: Fix collect_poly_tref
         global USED_TEXTURES, TEXTURE_PROCESSOR
+        return []
         '''
         if TEXTURE_PROCESSOR == 'SIMPLE':
             if EXPORT_UV_IMAGE_AS_TEXTURE:
@@ -809,12 +813,14 @@ class EGGMeshObjectData(EGGBaseObjectData):
 
         @return: list of polygon's attributes.
         """
-        no = self.obj_ref.matrix_world.to_euler().to_matrix() * face.normal
+        no = self.obj_ref.matrix_world.to_euler().to_matrix() @ face.normal
         #attributes.append('<Normal> {%s %s %s}' % (STRF(no[0]), STRF(no[1]), STRF(no[2])))
         attributes.append('<Normal> {%f %f %f}' % no[:])
         return attributes
 
     def collect_poly_rgba(self, face, attributes):
+        # FIXME: Fix collect_poly_rgba
+        return []
         if face.material_index < len(self.obj_ref.data.materials):
             mat = self.obj_ref.data.materials[face.material_index]
             if not mat:
@@ -839,8 +845,9 @@ class EGGMeshObjectData(EGGBaseObjectData):
             if not self.obj_ref.data.materials[face.material_index]:
                 return attributes
 
-            if not self.obj_ref.data.materials[face.material_index].game_settings.use_backface_culling:
-                attributes.append('<BFace> { 1 }')
+            # TODO: Find another way to impleement this
+            # if not self.obj_ref.data.materials[face.material_index].game_settings.use_backface_culling:
+            #     attributes.append('<BFace> { 1 }')
         return attributes
 
     def collect_poly_vertexref(self, face, attributes):
@@ -1206,6 +1213,9 @@ def get_used_materials(objects):
 def get_egg_materials_str(object_names=None):
     """ Return the EGG string of used materials
     """
+    # FIXME: Fix get_egg_materials_str()
+    return "", [], []
+
     if not object_names:
         objects = bpy.context.selected_objects
     else:
@@ -1533,7 +1543,7 @@ def write_out(fname, anims, from_actions, uv_img_as_tex, sep_anim, a_only,
     for obj in bpy.data.materials:
         obj.yabee_name = obj.name
         ts_names = []
-        for tex in obj.texture_slots.values():
+        for tex in obj.texture_paint_slots.values():
             ts_names.append(tex and tex.name or "")
         tsmap = NAME_SEPARATOR.join(ts_names)
         obj.yabee_texture_slots = tsmap
@@ -1549,8 +1559,8 @@ def write_out(fname, anims, from_actions, uv_img_as_tex, sep_anim, a_only,
     old_data = {}
     for d in (bpy.data.materials, bpy.data.objects, bpy.data.textures,
               bpy.data.armatures, bpy.data.actions, bpy.data.brushes,
-              bpy.data.cameras, bpy.data.curves, bpy.data.groups,
-              bpy.data.images, bpy.data.lamps, bpy.data.meshes,
+              bpy.data.cameras, bpy.data.curves, bpy.data.collections,
+              bpy.data.images, bpy.data.lights, bpy.data.meshes,
               bpy.data.metaballs, bpy.data.movieclips,
               bpy.data.node_groups, bpy.data.particles, bpy.data.screens,
               bpy.data.shape_keys, bpy.data.sounds,
